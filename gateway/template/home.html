@@ -1,0 +1,93 @@
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% get_current_language as LANGUAGE_CODE %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans 'Home' %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+</head>
+<body>
+  
+  <nav class="navbar navbar-expand-lg bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">MFS ASSIGNMENT</a>
+        <span class="navbar-text">
+          <small>
+            <span>Cart(<span id="order-count" class="fw-bolder text-success">0</span>)</span>
+            <a href="{% url 'logout' %}" class="text-decoration-none ms-3">Logout</a>
+          </small>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row mt-3" id="product-gridview-id">
+      <div class="col text-center">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+  let product_gridview = $("#product-gridview-id")
+  $(function(){
+    $.get("/service/products/", function(data){
+      product_gridview.empty();
+      for (let index = 0; index < data.length; index++) {
+        const element = data[index];
+        var product_grid_element = $(document.createElement("div"));
+        product_grid_element.addClass("card col-2 p-2 m-2 text-center");
+        product_grid_element.text(element.name);
+        
+        //product_grid_element.innerHTML = element.name;
+        var add_to_cart_btn = $(document.createElement("button"));
+        add_to_cart_btn.addClass("col btn btn-primary btn-add-to-cart")
+        add_to_cart_btn.attr("data-value", element.id);
+        add_to_cart_btn.text("Add to order");
+        product_grid_element.append(add_to_cart_btn);
+
+        var delete_product_btn = $(document.createElement("button"));
+        delete_product_btn.addClass("col btn btn-danger btn-delete-to-cart mt-2");
+        delete_product_btn.attr("data-value", element.id);
+        delete_product_btn.text("Delete");
+        product_grid_element.append(delete_product_btn);
+
+        product_gridview.append(product_grid_element);
+      }
+    });
+
+    $.get("/service/orders/", function(data){
+      $("#order-count").text(data.length);
+    });
+
+  });
+
+  $(document).on("click", ".btn-add-to-cart", function(){
+    $.post("/service/orders/",{
+      "product_id": $(this).data("value")
+    }, function(data){
+      $("#order-count").text(parseInt($("#order-count").text())+1);
+    });
+  });
+
+  $(document).on("click", ".btn-delete-to-cart", function(){
+    var btn = $(this);
+    $.ajax({
+      url: "/service/products/"+btn.data("value")+"/",
+      type: 'DELETE',
+      success: function(result) {
+        btn.closest('.card').remove();
+      }
+    });
+  });
+</script>
+</html>
